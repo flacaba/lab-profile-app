@@ -1,12 +1,38 @@
 const createError = require('http-errors');
 const User = require('../models/user.model');
+const passport = require('passport')
 
 module.exports.register = (req, res, next) => {
-  throw createError(501, 'Not Implemented')
+  const { email } = req.body
+
+  User.findOne( { email })
+    .then( user => {
+      if(user) {
+        throw createError(409, 'Email already registered')
+      } else {
+        return new User(req.body).save()
+      }
+    })
+    .then(user => res.status(201).json(user))
+    .catch(next)
 }
 
 module.exports.authenticate = (req, res, next) => {
-  throw createError(501, 'Not Implemented')
+  passport.authenticate('auth-local', (error,user,message) => {
+    if(error) {
+      next(error)
+    } else if (!user) {
+      next(createError(400,message))
+    } else {
+      req.login(user, (error) => {
+        if(error) {
+          next(error) 
+        } else {
+          res.status(201).json(user)
+        }
+      })
+    }
+  })(req,res,next)
 }
 
 module.exports.logout = (req, res, next) => {
@@ -14,7 +40,9 @@ module.exports.logout = (req, res, next) => {
 }
 
 module.exports.getProfile = (req, res, next) => {
-  throw createError(501, 'Not Implemented')
+
+    return res.json(req.user)  
+
 }
 
 module.exports.editProfile = (req, res, next) => {
